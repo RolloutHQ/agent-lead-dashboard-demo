@@ -20,29 +20,34 @@ export interface Credential {
   createdAt: string;
 }
 
-function generateToken(): string {
-  const clientId = process.env.ROLLOUT_CLIENT_ID!;
-  const clientSecret = process.env.ROLLOUT_CLIENT_SECRET!;
+export interface RolloutAuth {
+  clientId: string;
+  clientSecret: string;
+  consumerKey: string;
+}
+
+function generateToken(auth: RolloutAuth): string {
   const now = Math.floor(Date.now() / 1000);
 
   return jwt.sign(
     {
-      iss: clientId,
-      sub: "user123",
+      iss: auth.clientId,
+      sub: auth.consumerKey,
       iat: now,
       exp: now + 900,
     },
-    clientSecret,
+    auth.clientSecret,
     { algorithm: "HS512" }
   );
 }
 
 async function rolloutFetch<T>(
+  auth: RolloutAuth,
   path: string,
   credentialId: string,
   params?: Record<string, string>
 ): Promise<T> {
-  const token = generateToken();
+  const token = generateToken(auth);
   const url = new URL(`${CRM_BASE}${path}`);
   if (params) {
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
@@ -65,44 +70,44 @@ async function rolloutFetch<T>(
   return res.json();
 }
 
-export async function getPeople(credentialId: string, params?: Record<string, string>) {
-  return rolloutFetch<ApiListResponse<Person>>("/people", credentialId, params);
+export async function getPeople(auth: RolloutAuth, credentialId: string, params?: Record<string, string>) {
+  return rolloutFetch<ApiListResponse<Person>>(auth, "/people", credentialId, params);
 }
 
-export async function getPerson(credentialId: string, personId: string) {
-  return rolloutFetch<{ data: Person }>(`/people/${personId}`, credentialId);
+export async function getPerson(auth: RolloutAuth, credentialId: string, personId: string) {
+  return rolloutFetch<{ data: Person }>(auth, `/people/${personId}`, credentialId);
 }
 
-export async function getCalls(credentialId: string, params?: Record<string, string>) {
-  return rolloutFetch<ApiListResponse<Call>>("/calls", credentialId, params);
+export async function getCalls(auth: RolloutAuth, credentialId: string, params?: Record<string, string>) {
+  return rolloutFetch<ApiListResponse<Call>>(auth, "/calls", credentialId, params);
 }
 
-export async function getNotes(credentialId: string, params?: Record<string, string>) {
-  return rolloutFetch<ApiListResponse<Note>>("/notes", credentialId, params);
+export async function getNotes(auth: RolloutAuth, credentialId: string, params?: Record<string, string>) {
+  return rolloutFetch<ApiListResponse<Note>>(auth, "/notes", credentialId, params);
 }
 
-export async function getTextMessages(credentialId: string, params?: Record<string, string>) {
-  return rolloutFetch<ApiListResponse<TextMessage>>("/textMessages", credentialId, params);
+export async function getTextMessages(auth: RolloutAuth, credentialId: string, params?: Record<string, string>) {
+  return rolloutFetch<ApiListResponse<TextMessage>>(auth, "/textMessages", credentialId, params);
 }
 
-export async function getEmailMessages(credentialId: string, params?: Record<string, string>) {
-  return rolloutFetch<ApiListResponse<EmailMessage>>("/emailMessages", credentialId, params);
+export async function getEmailMessages(auth: RolloutAuth, credentialId: string, params?: Record<string, string>) {
+  return rolloutFetch<ApiListResponse<EmailMessage>>(auth, "/emailMessages", credentialId, params);
 }
 
-export async function getStages(credentialId: string) {
-  return rolloutFetch<ApiListResponse<Stage>>("/stages", credentialId);
+export async function getStages(auth: RolloutAuth, credentialId: string) {
+  return rolloutFetch<ApiListResponse<Stage>>(auth, "/stages", credentialId);
 }
 
-export async function getUsers(credentialId: string) {
-  return rolloutFetch<ApiListResponse<CrmUser>>("/users", credentialId);
+export async function getUsers(auth: RolloutAuth, credentialId: string) {
+  return rolloutFetch<ApiListResponse<CrmUser>>(auth, "/users", credentialId);
 }
 
-export async function getUser(credentialId: string, userId: string) {
-  return rolloutFetch<{ data: CrmUser }>(`/users/${userId}`, credentialId);
+export async function getUser(auth: RolloutAuth, credentialId: string, userId: string) {
+  return rolloutFetch<{ data: CrmUser }>(auth, `/users/${userId}`, credentialId);
 }
 
-export async function listCredentials(): Promise<Credential[]> {
-  const token = generateToken();
+export async function listCredentials(auth: RolloutAuth): Promise<Credential[]> {
+  const token = generateToken(auth);
   const res = await fetch(`${ROLLOUT_BASE}/credentials`, {
     headers: {
       Authorization: `Bearer ${token}`,

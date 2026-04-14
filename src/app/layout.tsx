@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Sidebar } from "@/components/sidebar";
-import { CredentialProvider } from "@/lib/credential-context";
+import { AppShell } from "@/components/app-shell";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -35,14 +34,7 @@ export default function RootLayout({
       className={`${dmSans.variable} ${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="h-full">
-        <CredentialProvider>
-          <div className="flex h-full">
-            <Sidebar />
-            <main className="flex-1 overflow-y-auto p-8">
-              {children}
-            </main>
-          </div>
-        </CredentialProvider>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

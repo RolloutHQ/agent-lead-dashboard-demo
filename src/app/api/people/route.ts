@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPeople } from "@/lib/rollout";
+import { getAuth, missingAuthResponse } from "@/lib/auth-from-request";
 
 export async function GET(request: NextRequest) {
+  const auth = getAuth(request);
+  if (!auth) return missingAuthResponse();
+
   const credentialId = request.headers.get("x-credential-id");
   if (!credentialId) {
     return NextResponse.json({ error: "Missing credential ID" }, { status: 400 });
@@ -14,13 +18,12 @@ export async function GET(request: NextRequest) {
     params.limit = limit || "50";
     if (offset) params.offset = offset;
 
-    const result = await getPeople(credentialId, params);
-    // Rollout returns { _metadata, people: [...] } — normalize to { data, _metadata }
+    const result = await getPeople(auth, credentialId, params);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw = result as any;
     const normalized = {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      data: (result as any).people || (result as any).data || [],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      _metadata: (result as any)._metadata,
+      data: raw.people || raw.data || [],
+      _metadata: raw._metadata,
     };
     return NextResponse.json(normalized);
   } catch (error) {

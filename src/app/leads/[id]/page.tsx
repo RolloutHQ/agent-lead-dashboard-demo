@@ -17,7 +17,7 @@ function getContactValue(item: { value: string } | string): string {
 
 export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { selected, loading: credLoading } = useCredential();
+  const { selected, loading: credLoading, authHeaders } = useCredential();
   const [person, setPerson] = useState<Person | null>(null);
   const [agent, setAgent] = useState<CrmUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,7 +29,7 @@ export default function LeadDetailPage() {
     setError(null);
 
     fetch(`/api/people/${id}`, {
-      headers: { "x-credential-id": selected.id },
+      headers: { ...authHeaders, "x-credential-id": selected.id },
     })
       .then((r) => {
         if (!r.ok) throw new Error("Failed to load lead");

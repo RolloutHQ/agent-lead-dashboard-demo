@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCalls, getNotes, getTextMessages, getEmailMessages } from "@/lib/rollout";
+import { getAuth, missingAuthResponse } from "@/lib/auth-from-request";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractData(result: any, key: string) {
@@ -7,6 +8,9 @@ function extractData(result: any, key: string) {
 }
 
 export async function GET(request: NextRequest) {
+  const auth = getAuth(request);
+  if (!auth) return missingAuthResponse();
+
   const credentialId = request.headers.get("x-credential-id");
   if (!credentialId) {
     return NextResponse.json({ error: "Missing credential ID" }, { status: 400 });
@@ -18,10 +22,10 @@ export async function GET(request: NextRequest) {
 
   try {
     const [calls, notes, texts, emails] = await Promise.all([
-      getCalls(credentialId, params).catch(() => ({ calls: [] })),
-      getNotes(credentialId, params).catch(() => ({ notes: [] })),
-      getTextMessages(credentialId, params).catch(() => ({ textMessages: [] })),
-      getEmailMessages(credentialId, params).catch(() => ({ emailMessages: [] })),
+      getCalls(auth, credentialId, params).catch(() => ({ calls: [] })),
+      getNotes(auth, credentialId, params).catch(() => ({ notes: [] })),
+      getTextMessages(auth, credentialId, params).catch(() => ({ textMessages: [] })),
+      getEmailMessages(auth, credentialId, params).catch(() => ({ emailMessages: [] })),
     ]);
 
     return NextResponse.json({

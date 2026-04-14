@@ -12,14 +12,14 @@ function formatAppKey(appKey: string): string {
 }
 
 export function KpiCards() {
-  const { selected } = useCredential();
+  const { selected, authHeaders } = useCredential();
   const [people, setPeople] = useState<Person[]>([]);
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
     if (!selected) return;
     fetch("/api/people", {
-      headers: { "x-credential-id": selected.id },
+      headers: { ...authHeaders, "x-credential-id": selected.id },
     })
       .then((res) => res.json())
       .then((data) => {

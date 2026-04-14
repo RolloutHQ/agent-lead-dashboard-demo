@@ -25,7 +25,7 @@ function getDisplayName(person: Person): string {
 }
 
 export function LeadTable() {
-  const { selected, loading: credLoading } = useCredential();
+  const { selected, loading: credLoading, authHeaders } = useCredential();
   const [people, setPeople] = useState<Person[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -38,7 +38,7 @@ export function LeadTable() {
     setError(null);
     setActiveTab("All");
     fetch("/api/people", {
-      headers: { "x-credential-id": selected.id },
+      headers: { ...authHeaders, "x-credential-id": selected.id },
     })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch leads");

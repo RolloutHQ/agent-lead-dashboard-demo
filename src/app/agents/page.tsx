@@ -19,7 +19,7 @@ function formatAppKey(appKey: string): string {
 }
 
 export default function UsersPage() {
-  const { selected, loading: credLoading } = useCredential();
+  const { selected, loading: credLoading, authHeaders } = useCredential();
   const [users, setUsers] = useState<CrmUserRow[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -27,7 +27,7 @@ export default function UsersPage() {
     if (!selected) return;
     setLoading(true);
     fetch("/api/users", {
-      headers: { "x-credential-id": selected.id },
+      headers: { ...authHeaders, "x-credential-id": selected.id },
     })
       .then((r) => r.json())
       .then((data) => setUsers(data.data || []))
