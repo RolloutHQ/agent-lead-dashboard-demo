@@ -24,10 +24,37 @@ function getDisplayName(person: Person): string {
   return parts.length > 0 ? parts.join(" ") : "Unknown";
 }
 
+function formatRelativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  return `${months}mo ago`;
+}
+
+function activityRecency(iso: string): "hot" | "warm" | "cold" {
+  const days = (Date.now() - new Date(iso).getTime()) / 86400000;
+  if (days <= 3) return "hot";
+  if (days <= 14) return "warm";
+  return "cold";
+}
+
+const recencyStyles = {
+  hot: "bg-success",
+  warm: "bg-warning",
+  cold: "bg-secondary/40",
+} as const;
+
 export function LeadTable() {
   const { selected, loading: credLoading, authHeaders } = useCredential();
   const [people, setPeople] = useState<Person[]>([]);
   const [total, setTotal] = useState(0);
+  const [activityMap, setActivityMap] = useState<Record<string, { timestamp: string; type: string }>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("All");
@@ -37,16 +64,22 @@ export function LeadTable() {
     setLoading(true);
     setError(null);
     setActiveTab("All");
-    fetch("/api/people", {
-      headers: { ...authHeaders, "x-credential-id": selected.id },
-    })
-      .then((res) => {
+
+    const headers = { ...authHeaders, "x-credential-id": selected.id };
+
+    Promise.all([
+      fetch("/api/people", { headers }).then((res) => {
         if (!res.ok) throw new Error("Failed to fetch leads");
         return res.json();
-      })
-      .then((data) => {
-        setPeople(data.data || []);
-        setTotal(data._metadata?.total || data.data?.length || 0);
+      }),
+      fetch("/api/people-activity", { headers })
+        .then((res) => (res.ok ? res.json() : {}))
+        .catch(() => ({})),
+    ])
+      .then(([peopleData, activity]) => {
+        setPeople(peopleData.data || []);
+        setTotal(peopleData._metadata?.total || peopleData.data?.length || 0);
+        setActivityMap(activity || {});
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -120,6 +153,7 @@ export function LeadTable() {
               <th className="text-left px-5 py-3 text-xs font-medium text-secondary uppercase tracking-wider">Lead</th>
               <th className="text-left px-5 py-3 text-xs font-medium text-secondary uppercase tracking-wider">Contact</th>
               <th className="text-left px-5 py-3 text-xs font-medium text-secondary uppercase tracking-wider">Stage</th>
+              <th className="text-left px-5 py-3 text-xs font-medium text-secondary uppercase tracking-wider">Last Activity</th>
               <th className="text-left px-5 py-3 text-xs font-medium text-secondary uppercase tracking-wider">Source</th>
               <th className="text-left px-5 py-3 text-xs font-medium text-secondary uppercase tracking-wider">Created</th>
             </tr>
@@ -127,7 +161,7 @@ export function LeadTable() {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-5 py-8 text-center text-sm text-secondary">
+                <td colSpan={6} className="px-5 py-8 text-center text-sm text-secondary">
                   No leads found{activeTab !== "All" ? ` in "${activeTab}" stage` : ""}.
                 </td>
               </tr>
@@ -151,6 +185,19 @@ export function LeadTable() {
                     </td>
                     <td className="px-5 py-3.5">
                       {lead.stage ? <StageBadge stage={lead.stage} /> : <span className="text-xs text-secondary">—</span>}
+                    </td>
+                    <td className="px-5 py-3.5 text-sm text-secondary">
+                      {activityMap[lead.id] ? (
+                        <div className="flex items-center gap-2">
+                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${recencyStyles[activityRecency(activityMap[lead.id].timestamp)]}`} />
+                          <div>
+                            <div className="font-[family-name:var(--font-geist-mono)] text-xs">{formatRelativeTime(activityMap[lead.id].timestamp)}</div>
+                            <div className="text-xs text-secondary/70 capitalize">{activityMap[lead.id].type}</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-secondary/50">No activity</span>
+                      )}
                     </td>
                     <td className="px-5 py-3.5 text-sm text-secondary">{lead.source || "—"}</td>
                     <td className="px-5 py-3.5 text-sm text-secondary font-[family-name:var(--font-geist-mono)]">

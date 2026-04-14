@@ -5,7 +5,8 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCredential } from "@/lib/credential-context";
 import { StageBadge } from "@/components/stage-badge";
-import type { Person, CrmUser } from "@/lib/types";
+import { ActivityTimeline } from "@/components/activity-timeline";
+import type { Person, CrmUser, Call, Note, TextMessage, EmailMessage, ActivityItem } from "@/lib/types";
 
 function formatAppKey(appKey: string): string {
   return appKey.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
@@ -15,11 +16,84 @@ function getContactValue(item: { value: string } | string): string {
   return typeof item === "string" ? item : item.value;
 }
 
+function toIso(v: string | number | undefined): string {
+  if (v == null) return "";
+  if (typeof v === "number") {
+    return new Date(v < 1e12 ? v * 1000 : v).toISOString();
+  }
+  if (/^\d+$/.test(v)) {
+    const n = Number(v);
+    return new Date(n < 1e12 ? n * 1000 : n).toISOString();
+  }
+  return v;
+}
+
+function normalizeActivities(data: {
+  calls?: Call[];
+  notes?: Note[];
+  textMessages?: TextMessage[];
+  emailMessages?: EmailMessage[];
+}): ActivityItem[] {
+  const items: ActivityItem[] = [];
+
+  for (const c of data.calls || []) {
+    const dir = c.isIncoming ? "Incoming" : "Outgoing";
+    const dur = c.duration ? ` (${Math.ceil(c.duration / 60)} min)` : "";
+    items.push({
+      id: c.id,
+      type: "call",
+      title: `${dir} Call${dur}`,
+      description: c.outcome || c.note || `${c.fromNumber || ""} → ${c.toNumber || ""}`.trim(),
+      timestamp: toIso(c.created),
+      personId: c.personId,
+      userId: c.userId,
+    });
+  }
+
+  for (const n of data.notes || []) {
+    items.push({
+      id: n.id,
+      type: "note",
+      title: n.subject || "Note",
+      description: n.body?.slice(0, 140) || "",
+      timestamp: toIso(n.created),
+      personId: n.personId,
+      userId: n.createdByUserId,
+    });
+  }
+
+  for (const t of data.textMessages || []) {
+    items.push({
+      id: t.id,
+      type: "text",
+      title: "Text Message",
+      description: t.body?.slice(0, 140) || `${t.fromNumber || ""} → ${t.toNumber || ""}`.trim(),
+      timestamp: toIso(t.created),
+      personId: t.personId,
+    });
+  }
+
+  for (const e of data.emailMessages || []) {
+    items.push({
+      id: e.id,
+      type: "email",
+      title: e.subject || "Email",
+      description: e.body?.slice(0, 140) || "",
+      timestamp: toIso(e.created),
+      personId: e.personId,
+    });
+  }
+
+  items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  return items;
+}
+
 export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { selected, loading: credLoading, authHeaders } = useCredential();
   const [person, setPerson] = useState<Person | null>(null);
   const [agent, setAgent] = useState<CrmUser | null>(null);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,16 +102,21 @@ export default function LeadDetailPage() {
     setLoading(true);
     setError(null);
 
-    fetch(`/api/people/${id}`, {
-      headers: { ...authHeaders, "x-credential-id": selected.id },
-    })
-      .then((r) => {
+    const headers = { ...authHeaders, "x-credential-id": selected.id };
+
+    Promise.all([
+      fetch(`/api/people/${id}`, { headers }).then((r) => {
         if (!r.ok) throw new Error("Failed to load lead");
         return r.json();
-      })
-      .then((data) => {
-        setPerson(data.person || null);
-        setAgent(data.assignedAgent || null);
+      }),
+      fetch(`/api/activities?personId=${id}`, { headers })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
+    ])
+      .then(([personData, activityData]) => {
+        setPerson(personData.person || null);
+        setAgent(personData.assignedAgent || null);
+        setActivities(activityData ? normalizeActivities(activityData) : []);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -150,6 +229,14 @@ export default function LeadDetailPage() {
                   </span>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Activity Timeline */}
+          {activities.length > 0 && (
+            <div>
+              <h2 className="text-xs font-medium text-secondary uppercase tracking-wider mb-3">Activity</h2>
+              <ActivityTimeline activities={activities} />
             </div>
           )}
 
