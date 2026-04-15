@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPeople } from "@/lib/rollout";
+import { getPeople, createPerson } from "@/lib/rollout";
 import { getAuth, missingAuthResponse } from "@/lib/auth-from-request";
 
 export async function GET(request: NextRequest) {
@@ -29,5 +29,25 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Failed to fetch people:", error);
     return NextResponse.json({ error: "Failed to fetch people" }, { status: 500 });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const auth = getAuth(request);
+  if (!auth) return missingAuthResponse();
+
+  const credentialId = request.headers.get("x-credential-id");
+  if (!credentialId) {
+    return NextResponse.json({ error: "Missing credential ID" }, { status: 400 });
+  }
+
+  try {
+    const body = await request.json();
+    const result = await createPerson(auth, credentialId, body);
+    return NextResponse.json(result, { status: 201 });
+  } catch (error) {
+    console.error("Failed to create person:", error);
+    const message = error instanceof Error ? error.message : "Failed to create person";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

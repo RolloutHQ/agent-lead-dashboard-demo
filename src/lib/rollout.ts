@@ -106,6 +106,63 @@ export async function getUser(auth: RolloutAuth, credentialId: string, userId: s
   return rolloutFetch<{ data: CrmUser }>(auth, `/users/${userId}`, credentialId);
 }
 
+async function rolloutMutate<T>(
+  auth: RolloutAuth,
+  path: string,
+  credentialId: string,
+  method: "POST" | "PUT",
+  body: Record<string, unknown>
+): Promise<T> {
+  const token = generateToken(auth);
+  const url = `${CRM_BASE}${path}`;
+
+  const res = await fetch(url, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "X-Rollout-Credential-Id": credentialId,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Rollout API error ${res.status}: ${text}`);
+  }
+
+  return res.json();
+}
+
+export async function createPerson(
+  auth: RolloutAuth,
+  credentialId: string,
+  data: Record<string, unknown>
+) {
+  return rolloutMutate<{ id: string } & Record<string, unknown>>(
+    auth,
+    "/people",
+    credentialId,
+    "POST",
+    data
+  );
+}
+
+export async function updatePerson(
+  auth: RolloutAuth,
+  credentialId: string,
+  personId: string,
+  data: Record<string, unknown>
+) {
+  return rolloutMutate<{ id: string } & Record<string, unknown>>(
+    auth,
+    `/people/${personId}`,
+    credentialId,
+    "PUT",
+    data
+  );
+}
+
 export async function listCredentials(auth: RolloutAuth): Promise<Credential[]> {
   const token = generateToken(auth);
   const res = await fetch(`${ROLLOUT_BASE}/credentials`, {

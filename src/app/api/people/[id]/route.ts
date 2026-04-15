@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPerson, getUser } from "@/lib/rollout";
+import { getPerson, getUser, updatePerson } from "@/lib/rollout";
 import { getAuth, missingAuthResponse } from "@/lib/auth-from-request";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -33,5 +33,27 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   } catch (error) {
     console.error("Failed to fetch person:", error);
     return NextResponse.json({ error: "Failed to fetch person" }, { status: 500 });
+  }
+}
+
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = getAuth(request);
+  if (!auth) return missingAuthResponse();
+
+  const credentialId = request.headers.get("x-credential-id");
+  if (!credentialId) {
+    return NextResponse.json({ error: "Missing credential ID" }, { status: 400 });
+  }
+
+  const { id } = await params;
+
+  try {
+    const body = await request.json();
+    const result = await updatePerson(auth, credentialId, id, body);
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error("Failed to update person:", error);
+    const message = error instanceof Error ? error.message : "Failed to update person";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

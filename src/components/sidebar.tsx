@@ -7,6 +7,7 @@ import { CredentialSelector } from "./credential-selector";
 const nav = [
   { label: "Dashboard", href: "/", icon: DashboardIcon },
   { label: "Leads", href: "/leads", icon: LeadsIcon },
+  { label: "Create Lead", href: "/create-lead", icon: CreateLeadIcon },
   { label: "CRM Users", href: "/agents", icon: AgentsIcon },
   { label: "CRM Integrations", href: "/integrations", icon: IntegrationsIcon },
 ];
@@ -80,6 +81,16 @@ function AgentsIcon({ className }: { className?: string }) {
       <circle cx="11" cy="5" r="2.5" />
       <path d="M1 14c0-2.8 2.2-4.5 5-4.5" />
       <path d="M15 14c0-2.8-2.2-4.5-5-4.5" />
+    </svg>
+  );
+}
+
+function CreateLeadIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <circle cx="8" cy="6" r="3" />
+      <path d="M2 14c0-3.3 2.7-5 6-5" />
+      <path d="M12 10v4M10 12h4" />
     </svg>
   );
 }
