@@ -33,3 +33,62 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
+
+/* Rollout CredentialsManager overrides */
+.rollout-embed .universal-CredentialsManager-root {
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+.rollout-embed .universal-CredentialsManager-header {
+  display: none;
+}
+
+.rollout-embed .universal-ConnectorList-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 1rem !important;
+}
+
+.rollout-embed .universal-ConnectorListItem-root {
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border);
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.rollout-embed .universal-ConnectorListItem-root:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.rollout-embed .universal-ConnectorListItem-icon {
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.rollout-embed .universal-ConnectorListItem-icon img,
+.rollout-embed .universal-Image-root {
+  width: 40px !important;
+  height: 40px !important;
+  object-fit: contain;
+}
+
+.rollout-embed .universal-ConnectorListItem-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-foreground);
+}
+
+.rollout-embed button[class*="universal-"] {
+  border-radius: 0.5rem;
+  font-family: var(--font-body), system-ui, sans-serif;
+}

@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@rollout/link-react": "^0.16.0",
     "jsonwebtoken": "^9.0.3",
     "next": "16.2.3",
     "react": "19.2.4",
