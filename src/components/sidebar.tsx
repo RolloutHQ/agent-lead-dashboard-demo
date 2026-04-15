@@ -16,7 +16,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-[240px] shrink-0 bg-[#1A1A26] text-white flex flex-col h-full">
+    <aside className="w-[240px] shrink-0 bg-[#1A1A26] text-white flex flex-col h-full min-h-0">
       <div className="px-4 py-5 flex items-center gap-3">
         <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
           <span className="text-white text-sm font-bold font-[family-name:var(--font-dm-sans)]">R</span>
@@ -25,7 +25,7 @@ export function Sidebar() {
           RDC ARM
         </span>
       </div>
-      <nav className="flex-1 px-3 py-2 flex flex-col gap-0.5">
+      <nav className="flex-1 px-3 py-2 flex flex-col gap-0.5 overflow-y-auto min-h-0">
         {nav.map((item) => {
           const isActive =
             item.href === "/"
@@ -47,7 +47,7 @@ export function Sidebar() {
           );
         })}
       </nav>
-      <div className="px-3 py-4 border-t border-white/10">
+      <div className="px-3 py-4 border-t border-white/10 shrink-0">
         <CredentialSelector />
       </div>
     </aside>
