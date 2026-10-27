@@ -15,6 +15,8 @@ const stageStyles: Record<string, string> = {
   "Showing": "bg-stage-qualified/10 text-stage-qualified",
   "Prospect": "bg-stage-new/10 text-stage-new",
   "OPEN": "bg-success/10 text-success",
+  "Active": "bg-success/10 text-success",
+  "Pending": "bg-warning/10 text-warning",
 };
 
 export function StageBadge({ stage }: { stage: string }) {

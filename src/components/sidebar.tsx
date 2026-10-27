@@ -8,8 +8,10 @@ const nav = [
   { label: "Dashboard", href: "/", icon: DashboardIcon },
   { label: "Leads", href: "/leads", icon: LeadsIcon },
   { label: "Create Lead", href: "/create-lead", icon: CreateLeadIcon },
+  { label: "Transactions", href: "/transactions", icon: TransactionsIcon },
   { label: "CRM Users", href: "/agents", icon: AgentsIcon },
   { label: "CRM Integrations", href: "/integrations", icon: IntegrationsIcon },
+  { label: "TMS Integrations", href: "/tms-integrations", icon: TmsIcon },
 ];
 
 export function Sidebar() {
@@ -91,6 +93,26 @@ function CreateLeadIcon({ className }: { className?: string }) {
       <circle cx="8" cy="6" r="3" />
       <path d="M2 14c0-3.3 2.7-5 6-5" />
       <path d="M12 10v4M10 12h4" />
+    </svg>
+  );
+}
+
+function TransactionsIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M2 7.5L8 2.5l6 5" />
+      <path d="M3.5 6.5V14h9V6.5" />
+      <path d="M6.5 14v-3.5h3V14" />
+    </svg>
+  );
+}
+
+function TmsIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M4 1h6l3 3v11H4z" />
+      <path d="M10 1v3h3" />
+      <path d="M6.5 9.5l1.5 1.5 3-3" />
     </svg>
   );
 }

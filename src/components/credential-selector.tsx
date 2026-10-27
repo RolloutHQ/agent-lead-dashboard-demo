@@ -3,9 +3,21 @@
 import { useState } from "react";
 import { useCredential } from "@/lib/credential-context";
 import { useSetup } from "@/lib/setup-context";
+import type { Credential } from "@/lib/rollout";
 
 export function CredentialSelector() {
-  const { credentials, selected, setSelected, loading, error, refresh } = useCredential();
+  const {
+    credentials,
+    selected,
+    setSelected,
+    tmsCredentials,
+    tmsSelected,
+    setTmsSelected,
+    tmsError,
+    loading,
+    error,
+    refresh,
+  } = useCredential();
   const { consumerKey, setConsumerKey, clear } = useSetup();
   const [editingKey, setEditingKey] = useState(false);
   const [keyDraft, setKeyDraft] = useState(consumerKey);
@@ -51,9 +63,57 @@ export function CredentialSelector() {
         )}
       </div>
 
-      {/* CRM Credential Selector */}
+      <CredentialDropdown
+        label="CRM Credential"
+        credentials={credentials}
+        selected={selected}
+        onSelect={setSelected}
+        loading={loading}
+        error={error}
+        onRetry={refresh}
+      />
+
+      <CredentialDropdown
+        label="TMS Credential"
+        credentials={tmsCredentials}
+        selected={tmsSelected}
+        onSelect={setTmsSelected}
+        loading={loading}
+        error={tmsError}
+        onRetry={refresh}
+      />
+
+      {/* Disconnect */}
+      <button
+        onClick={clear}
+        className="w-full text-xs text-white/30 hover:text-white/60 transition-colors text-left mt-2"
+      >
+        Disconnect
+      </button>
+    </div>
+  );
+}
+
+function CredentialDropdown({
+  label,
+  credentials,
+  selected,
+  onSelect,
+  loading,
+  error,
+  onRetry,
+}: {
+  label: string;
+  credentials: Credential[];
+  selected: Credential | null;
+  onSelect: (c: Credential | null) => void;
+  loading: boolean;
+  error: string | null;
+  onRetry: () => void;
+}) {
+  return (
       <div>
-        <span className="text-xs text-white/40 uppercase tracking-wider font-medium">CRM Credential</span>
+        <span className="text-xs text-white/40 uppercase tracking-wider font-medium">{label}</span>
         {loading ? (
           <div className="flex items-center gap-2 mt-1 text-xs text-white/50">
             <span className="w-2 h-2 rounded-full bg-white/30 animate-pulse" />
@@ -65,7 +125,7 @@ export function CredentialSelector() {
               <span className="w-2 h-2 rounded-full bg-error" />
               Error
             </div>
-            <button onClick={refresh} className="text-xs text-white/40 hover:text-white mt-1 transition-colors">
+            <button onClick={onRetry} className="text-xs text-white/40 hover:text-white mt-1 transition-colors">
               Retry
             </button>
           </div>
@@ -80,7 +140,7 @@ export function CredentialSelector() {
               value={selected?.id || ""}
               onChange={(e) => {
                 const cred = credentials.find((c) => c.id === e.target.value);
-                setSelected(cred || null);
+                onSelect(cred || null);
               }}
               className="w-full bg-white/10 text-white text-sm rounded-lg pl-2.5 pr-8 py-1.5 border border-white/20 outline-none hover:border-white/30 focus:border-white/40 transition-colors appearance-none cursor-pointer"
             >
@@ -105,14 +165,5 @@ export function CredentialSelector() {
           </div>
         )}
       </div>
-
-      {/* Disconnect */}
-      <button
-        onClick={clear}
-        className="w-full text-xs text-white/30 hover:text-white/60 transition-colors text-left mt-2"
-      >
-        Disconnect
-      </button>
-    </div>
   );
 }

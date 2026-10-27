@@ -8,9 +8,15 @@ import type {
   Stage,
   CrmUser,
   ApiListResponse,
+  Transaction,
+  TmsPerson,
+  TmsUser,
+  TransactionNote,
+  TransactionDocument,
 } from "./types";
 
 const CRM_BASE = "https://crm.universal.rollout.com/api";
+const TMS_BASE = "https://tms.universal.rollout.com/api";
 const ROLLOUT_BASE = "https://universal.rollout.com/api";
 
 export interface Credential {
@@ -45,10 +51,11 @@ async function rolloutFetch<T>(
   auth: RolloutAuth,
   path: string,
   credentialId: string,
-  params?: Record<string, string>
+  params?: Record<string, string>,
+  base: string = CRM_BASE
 ): Promise<T> {
   const token = generateToken(auth);
-  const url = new URL(`${CRM_BASE}${path}`);
+  const url = new URL(`${base}${path}`);
   if (params) {
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   }
@@ -106,6 +113,89 @@ export async function getUser(auth: RolloutAuth, credentialId: string, userId: s
   return rolloutFetch<{ data: CrmUser }>(auth, `/users/${userId}`, credentialId);
 }
 
+export async function getTransactions(auth: RolloutAuth, credentialId: string, params?: Record<string, string>) {
+  return rolloutFetch<{ transactions: Transaction[]; _metadata: ApiListResponse<Transaction>["_metadata"] }>(
+    auth,
+    "/transactions",
+    credentialId,
+    params,
+    TMS_BASE
+  );
+}
+
+export async function getTransaction(auth: RolloutAuth, credentialId: string, id: string): Promise<Transaction> {
+  const raw = await rolloutFetch<{ transaction?: Transaction } & Transaction>(
+    auth,
+    `/transactions/${encodeURIComponent(id)}`,
+    credentialId,
+    undefined,
+    TMS_BASE
+  );
+  return raw.transaction ?? raw;
+}
+
+async function getTmsByIds<T>(
+  auth: RolloutAuth,
+  credentialId: string,
+  path: "/people" | "/users",
+  collection: "people" | "users",
+  ids: string[]
+): Promise<T[]> {
+  const unique = [...new Set(ids.filter(Boolean))];
+  const batches: string[][] = [];
+  for (let i = 0; i < unique.length; i += 50) batches.push(unique.slice(i, i + 50));
+  const fetchBatches = (base: string) =>
+    Promise.all(
+      batches.map((batch) =>
+        rolloutFetch<Record<string, T[]>>(auth, path, credentialId, { id: batch.join(","), limit: "100" }, base)
+          .then((r) => r[collection] ?? [])
+      )
+    ).then((r) => r.flat());
+  // Some connectors (e.g. Lofty) only expose people/users through the CRM API, with the same IDs.
+  return fetchBatches(TMS_BASE).catch(() => fetchBatches(CRM_BASE));
+}
+
+export function getTmsPeopleByIds(auth: RolloutAuth, credentialId: string, ids: string[]) {
+  return getTmsByIds<TmsPerson>(auth, credentialId, "/people", "people", ids);
+}
+
+export function getTmsUsersByIds(auth: RolloutAuth, credentialId: string, ids: string[]) {
+  return getTmsByIds<TmsUser>(auth, credentialId, "/users", "users", ids);
+}
+
+export type Optional<T> = { available: true; items: T[] } | { available: false; reason: string };
+
+async function getTmsForTransaction<T extends { transactionId?: string | null }>(
+  auth: RolloutAuth,
+  credentialId: string,
+  path: string,
+  collection: string,
+  transactionId: string
+): Promise<Optional<T>> {
+  try {
+    const r = await rolloutFetch<Record<string, T[]>>(
+      auth,
+      path,
+      credentialId,
+      { transactionId, limit: "100" },
+      TMS_BASE
+    );
+    return { available: true, items: (r[collection] ?? []).filter((x) => x.transactionId === transactionId) };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "";
+    const match = msg.match(/"errorMessage":"([^"]+)"/);
+    return { available: false, reason: match?.[1] ?? "Not available for this connection." };
+  }
+}
+
+export function getTransactionNotes(auth: RolloutAuth, credentialId: string, transactionId: string) {
+  return getTmsForTransaction<TransactionNote>(auth, credentialId, "/transaction-notes", "transactionNotes", transactionId);
+}
+
+export function getTransactionDocuments(auth: RolloutAuth, credentialId: string, transactionId: string) {
+  return getTmsForTransaction<TransactionDocument>(auth, credentialId, "/documents", "documents", transactionId);
+}
+
 async function rolloutMutate<T>(
   auth: RolloutAuth,
   path: string,
@@ -160,6 +250,22 @@ export async function updatePerson(
     credentialId,
     "PUT",
     data
+  );
+}
+
+export type ApiCategory = "crm" | "tms";
+
+export async function getAppKeysForCategory(category: ApiCategory): Promise<Set<string>> {
+  const res = await fetch(`${ROLLOUT_BASE}/connectors`, { next: { revalidate: 3600 } });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Rollout API error ${res.status}: ${text}`);
+  }
+  const connectors: Record<string, { entities?: Record<string, unknown> }> = await res.json();
+  return new Set(
+    Object.entries(connectors)
+      .filter(([, c]) => c.entities?.[category])
+      .map(([appKey]) => appKey)
   );
 }
 

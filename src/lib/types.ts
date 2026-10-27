@@ -94,6 +94,82 @@ export interface LeadWithDetails extends Person {
   crmSource?: string;
 }
 
+export interface Transaction {
+  id: string;
+  created: string;
+  updated: string;
+  transactionName?: string | null;
+  transactionType?: string | null;
+  status?: string | null;
+  stage?: string | null;
+  sideRepresented?: string | null;
+  titleCompany?: string | null;
+  mortgageCompany?: string | null;
+  property?: {
+    address?: { street?: string; city?: string; state?: string; code?: string; county?: string; country?: string } | null;
+    mlsNumber?: string | null;
+    price?: number | null;
+    yearBuilt?: number | null;
+  } | null;
+  closingDate?: string | null;
+  escrowClosingDate?: string | null;
+  acceptanceDate?: string | null;
+  expirationDate?: string | null;
+  listingDate?: string | null;
+  clientRepAgreementSignedDate?: string | null;
+  totalCommissionRate?: number | null;
+  totalCommissionAmount?: number | null;
+  sellSideCommissionRate?: number | null;
+  sellSideCommissionAmount?: number | null;
+  buySideCommissionRate?: number | null;
+  buySideCommissionAmount?: number | null;
+  brokerageCommissionAmount?: number | null;
+  referralAmount?: number | null;
+  userParticipants?: { userId: string; roles?: string[] | null; totalCommissionAmount?: number | null }[] | null;
+  peopleParticipants?: { personId: string; roles?: string[] | null }[] | null;
+  source?: string | null;
+  description?: string | null;
+}
+
+export interface TmsPerson {
+  id: string;
+  name?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  emails?: ContactInfo[] | null;
+  phones?: ContactInfo[] | null;
+}
+
+export interface TmsUser {
+  id: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+}
+
+export interface TransactionNote {
+  id: string;
+  transactionId?: string | null;
+  createdByUserId?: string | null;
+  subject?: string | null;
+  body?: string | null;
+  isHtml?: boolean | null;
+  created: string;
+}
+
+export interface TransactionDocument {
+  id: string;
+  transactionId?: string | null;
+  name?: string | null;
+  category?: string | null;
+  status?: string | null;
+  fileUrl?: string | null;
+  mimeType?: string | null;
+  isSigned?: boolean | null;
+  created: string;
+}
+
 export interface ApiListResponse<T> {
   data: T[];
   _metadata: {

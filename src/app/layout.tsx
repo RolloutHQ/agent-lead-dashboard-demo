@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, Inter, Geist_Mono } from "next/font/google";
+import "@rollout/link-react/style.css";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 
