@@ -1,27 +1,6 @@
-"use client";
-
-import { useCallback } from "react";
-import { RolloutLinkProvider, CredentialsManager } from "@rollout/link-react";
-import { useCredential } from "@/lib/credential-context";
-import { useSetup } from "@/lib/setup-context";
+import { RolloutConnections } from "@/components/rollout-connections";
 
 export default function TmsIntegrationsPage() {
-  const { refresh } = useCredential();
-  const { clientId, clientSecret, consumerKey } = useSetup();
-
-  const fetchToken = useCallback(() => {
-    if (!clientId || !clientSecret) return Promise.resolve("");
-    return fetch("/api/rollout-token", {
-      headers: {
-        "x-rollout-client-id": clientId,
-        "x-rollout-client-secret": clientSecret,
-        "x-rollout-consumer-key": consumerKey,
-      },
-    })
-      .then((r) => r.json())
-      .then((d) => d.token as string);
-  }, [clientId, clientSecret, consumerKey]);
-
   return (
     <div className="max-w-[1200px]">
       <div className="mb-8">
@@ -32,16 +11,7 @@ export default function TmsIntegrationsPage() {
           Connect and manage your transaction management integrations via Rollout
         </p>
       </div>
-
-      <div className="rollout-embed bg-surface rounded-xl border border-border p-6">
-        <RolloutLinkProvider token={fetchToken}>
-          <CredentialsManager
-            apiCategories={{ tms: true }}
-            onCredentialAdded={() => refresh()}
-            onCredentialDeleted={() => refresh()}
-          />
-        </RolloutLinkProvider>
-      </div>
+      <RolloutConnections category="tms" />
     </div>
   );
 }
